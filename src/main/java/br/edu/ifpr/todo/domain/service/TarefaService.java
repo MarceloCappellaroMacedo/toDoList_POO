@@ -7,7 +7,7 @@ import br.edu.ifpr.todo.domain.repository.TarefaRepository;
 import br.edu.ifpr.todo.api.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -18,16 +18,13 @@ public class TarefaService {
         this.repo = repo;
     }
 
-    public List<Tarefa> listar(TodoStatus status, Boolean importante) {
-        if (status != null && Boolean.TRUE.equals(importante)) {
-            return repo.findByStatusAndImportanteTrue(status);
-        }
-        if (status != null) {
-            return repo.findByStatus(status);
-        }
-        if (Boolean.TRUE.equals(importante)) {
-            return repo.findByImportanteTrue();
-        }
+    // Métodos de regra de negócio (pode ser alterado)
+    public List<Tarefa> listar(String q, TodoStatus status, Boolean importante, LocalDate ate) {
+        if (q != null && !q.isBlank()) return repo.findByNomeContainingIgnoreCase(q);
+        if (status != null && Boolean.TRUE.equals(importante)) return repo.findByStatusAndImportanteTrue(status);
+        if (status != null) return repo.findByStatus(status);
+        if (Boolean.TRUE.equals(importante)) return repo.findByImportanteTrue();
+        if (ate != null) return repo.findByDataEntregaBefore(ate.plusDays(1));
         return repo.findAll();
     }
 
@@ -45,22 +42,5 @@ public class TarefaService {
         t.setDataEntrega(dto.getDataEntrega());
         t.setImportante(dto.getImportante() != null ? dto.getImportante() : false);
         return repo.save(t);
-    }
-
-    @Transactional
-    public Tarefa atualizarParcial(Long id, TarefaRequest dto) {
-        Tarefa t = buscarPorId(id);
-        if (dto.getNome() != null) t.setNome(dto.getNome());
-        if (dto.getDescricao() != null) t.setDescricao(dto.getDescricao());
-        if (dto.getStatus() != null) t.setStatus(dto.getStatus());
-        if (dto.getDataEntrega() != null) t.setDataEntrega(dto.getDataEntrega());
-        if (dto.getImportante() != null) t.setImportante(dto.getImportante());
-        return repo.save(t);
-    }
-
-    @Transactional
-    public void remover(Long id) {
-        Tarefa t = buscarPorId(id);
-        repo.delete(t);
     }
 }
